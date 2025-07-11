@@ -1,7 +1,7 @@
 
-# 🕷 Telegram Scammer Bot
+# 🕷 ScammerResponder
 
-This Python bot detects messages from scammers in [Telegram Web](https://web.telegram.org), then replies using a locally hosted LLM (via [Ollama](https://ollama.com)). It’s designed to waste scammers’ time by acting naive, confused, and subtly frustrating.
+ScammerResponder is a Python bot that detects messages from scammers in [Telegram Web](https://web.telegram.org), then replies using a locally hosted LLM (via [Ollama](https://ollama.com)). It’s designed to waste scammers’ time by acting naive, confused, and subtly frustrating.
 
 ---
 
@@ -15,8 +15,8 @@ This Python bot detects messages from scammers in [Telegram Web](https://web.tel
 
 ### 2️⃣ Clone this repo & set up a virtual environment
 ```bash
-git clone https://github.com/YOUR-USERNAME/telegram-scammer-bot.git
-cd telegram-scammer-bot
+git clone https://github.com/hirscr/scammerresponder.git
+cd scammerresponder
 python3 -m venv venv
 source venv/bin/activate    # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
@@ -48,7 +48,7 @@ ollama pull llama3.2
 1. Log in to [web.telegram.org](https://web.telegram.org) in your regular Chrome browser (if not already logged in).  
 2. From the project folder, start the bot:  
 ```bash
-python3 scammer_bot.py
+python3 scammerresponder.py
 ```  
 The bot will:  
 - Launch Chrome in debugging mode automatically.  
@@ -59,9 +59,9 @@ The bot will:
 ---
 
 ## 🚨 Notes
-- The Chrome window will stay open even if you stop the bot, so you can restart the bot without losing your place:  
+- The Chrome window will stay open even if you stop the bot, so you can restart it without losing your place:  
 ```bash
-python3 scammer_bot.py
+python3 scammerresponder.py
 ```
 - The bot tracks the Telegram chat window. Make sure you stay on the same chat while it runs.
 
@@ -69,4 +69,3 @@ python3 scammer_bot.py
 
 ## 📚 Medium Article (Coming Soon)
 A step-by-step guide with screenshots will be published soon on Medium.
-
