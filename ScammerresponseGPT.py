@@ -5,6 +5,61 @@ import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+import os
+from datetime import datetime
+# ----Helper functions---
+def init_log_file():
+    os.makedirs("logs", exist_ok=True)
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    return os.path.join("logs", f"session-{timestamp}.txt")
+
+def log_message(log_path, author, text):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(log_path, "a", encoding="utf-8") as f:
+        f.write(f"[{timestamp}] {author}: {text}\n")
+
+def get_chat_display_name(driver):
+    try:
+        name_el = driver.find_element(By.XPATH, '//div[@data-testid="chat-info-panel-chat-title"]')
+        return name_el.text.strip() or "Scammer"
+    except:
+        return "Scammer"
+
+def get_all_scammer_messages(driver):
+    try:
+        messages = driver.find_elements(By.XPATH, '//div[contains(@class, "bubble") and @data-mid]')
+        scammer_texts = []
+
+        for msg in messages:
+            try:
+                class_name = msg.get_attribute("class") or ""
+                if "is-out" in class_name:
+                    continue  # skip our messages
+
+                text = msg.text.strip()
+                if not text:
+                    inner = msg.find_elements(By.XPATH, ".//div | .//span")
+                    text = " ".join(i.text for i in inner if i.text.strip()).strip()
+
+                text = " ".join(text.split())
+                if text:
+                    scammer_texts.append(text)
+            except Exception as inner_e:
+                print(f"⚠️ Error extracting text from message: {inner_e}")
+
+        return scammer_texts
+    except Exception as e:
+        print(f"❌ Error getting scammer messages: {e}")
+        return []
+
+def read_log_context(log_path, max_lines=50):
+    try:
+        with open(log_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+        return "".join(lines[-max_lines:]).strip()
+    except Exception as e:
+        print(f"⚠️ Could not read log context: {e}")
+        return ""
 
 # --- STEP 1: Launch Chrome normally (Selenium will handle it) ---
 def start_selenium():
@@ -39,7 +94,7 @@ def send_message(driver, message):
 
 
 # --- STEP 3: Detect scammer messages ---
-def get_new_messages(driver, last_seen_texts):
+def get_new_messages(driver, last_seen_texts, scammer_name, log_path):
     try:
         messages = driver.find_elements(By.XPATH, '//div[contains(@class, "bubble") and @data-mid]')
         print(f"🔍 Found {len(messages)} total message bubbles")
@@ -90,7 +145,9 @@ def get_ollama_response(prompt):
                     "You are roleplaying as an extremely gullible, overly chatty, and slightly confused person who is texting with a scammer on Telegram. "
                     "Your goal is to waste their time, frustrate them, and keep them engaged for as long as possible without making them suspect you are not real. "
                     "Keep replies short (1-3 sentences max) like a real person texting on Telegram.\n\n"
-                    f"Scammer: {prompt}\nYou:"
+                    "Here is the chat so far:\n"
+                    f"{prompt}\n\n"
+                    "Now write your next reply as the gullible person:"
                 ),
                 "stream": False,
                 "max_tokens": 150
@@ -117,9 +174,20 @@ if __name__ == "__main__":
 
     try:
         first_reply = True
+        scammer_name = get_chat_display_name(driver)
+
+        log_path = init_log_file()
+        print(f"Logging to {log_path}\n")
+        initial_messages = get_all_scammer_messages(driver)
+        for msg in initial_messages:
+            log_message(log_path, scammer_name, msg)
+        last_seen_texts.extend(initial_messages)
+
         while True:
-            new_texts = get_new_messages(driver, last_seen_texts)
+            new_texts = get_new_messages(driver, last_seen_texts, scammer_name, log_path)
             if new_texts:
+                for msg in new_texts:
+                    log_message(log_path, scammer_name, msg)
                 combined_text = "\n".join(new_texts).strip()
                 print(f"📩 New scammer messages:\n{combined_text}")
                 wait_time = 30 if first_reply else random.randint(5, 30)
@@ -127,17 +195,21 @@ if __name__ == "__main__":
                 buffer = new_texts
                 start_time = time.time()
 
-                while time.time() - start_time < 30:
+                while time.time() - start_time < wait_time:
                     time.sleep(3)
-                    new_messages = get_new_messages(driver, last_seen_texts)
-                    combined_text = "\n".join(new_texts).strip()
-                    if new_messages:
-                        print(f"📩another one:\n{combined_text}")
-                        buffer.extend(new_messages)
+                    new_texts = get_new_messages(driver, last_seen_texts, scammer_name, log_path)
+                    truly_new = [msg for msg in new_texts if msg not in buffer]
+                    if truly_new:
+                        print(f"📩 another one:\n{chr(10).join(truly_new)}")
+                        buffer.extend(truly_new)
+                        for msg in truly_new:
+                            log_message(log_path, scammer_name, msg)
                 start_time = time.time()
                 combined_text = "\n".join(buffer).strip()
-                ollama_reply = get_ollama_response(combined_text)
+                chat_context = read_log_context(log_path)
+                ollama_reply = get_ollama_response(chat_context + "\n" + combined_text)
                 send_message(driver, ollama_reply)
+                log_message(log_path, "Bot Responder", ollama_reply)
                 last_seen_texts.extend(new_texts)
                 first_reply = False  # turn off long delay
             else:
