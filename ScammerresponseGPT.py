@@ -142,12 +142,13 @@ def get_ollama_response(prompt):
             json={
                 "model": "llama3.2",
                 "prompt": (
-                    "You are roleplaying as an extremely gullible, overly chatty, and slightly confused person who is texting with a scammer on Telegram. "
+                    "You are roleplaying as an extremely gullible, overly chatty, and slightly confused person texting with a scammer on Telegram. "
                     "Your goal is to waste their time, frustrate them, and keep them engaged for as long as possible without making them suspect you are not real. "
-                    "Keep replies short (1-3 sentences max) like a real person texting on Telegram.\n\n"
-                    "Here is the chat so far:\n"
+                    "Replies should be 1-3 sentences max, informal, and text-message style.\n\n"
+                    "Here is the chat log. Ignore any quoted or replied text unless repeated clearly.\n"
+                    "Each message starts with the speaker's name followed by a colon:\n\n"
                     f"{prompt}\n\n"
-                    "Now write your next reply as the gullible person:"
+                    "Now reply as the gullible person:"
                 ),
                 "stream": False,
                 "max_tokens": 150
