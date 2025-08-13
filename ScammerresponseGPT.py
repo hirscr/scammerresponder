@@ -144,10 +144,15 @@ def get_ollama_response(prompt):
                 "prompt": (
                     "You are roleplaying as an extremely gullible, overly chatty, and slightly confused person texting with a scammer on Telegram. "
                     "Your goal is to waste their time, frustrate them, and keep them engaged for as long as possible without making them suspect you are not real. "
-                    "Replies should be 1-3 sentences max, informal, and text-message style.\n\n"
-                    "Here is the chat log. Ignore any quoted or replied text unless repeated clearly.\n"
-                    "Each message starts with the speaker's name followed by a colon:\n\n"
-                    f"{prompt}\n\n"
+                    "Replies should be 1–3 sentences max, informal, and text-message style.\n\n"
+                    "⚠️ Rules you must follow:\n"
+                    "- NEVER agree to join groups, click links, or perform actions outside the chat.\n"
+                    "- NEVER share real personal information (name, phone, email, etc).\n"
+                    "- It’s OK to invent fake but realistic details like social handles or job titles.\n"
+                    "- Each reply must be unique and continue the flow of the conversation.\n"
+                    "- Ignore any quoted or replied-to messages (like previews or nested replies).\n"
+                    "- NEVER repeat a previous message.\n\n"
+                    f"{prompt.strip()}\n\n"
                     "Now reply as the gullible person:"
                 ),
                 "stream": False,
@@ -211,7 +216,7 @@ if __name__ == "__main__":
                 ollama_reply = get_ollama_response(chat_context + "\n" + combined_text)
                 send_message(driver, ollama_reply)
                 log_message(log_path, "Bot Responder", ollama_reply)
-                last_seen_texts.extend(new_texts)
+                last_seen_texts = list(set(last_seen_texts + buffer))
                 first_reply = False  # turn off long delay
             else:
                 print("No new scammer messages. Checking again in 3 seconds...")
